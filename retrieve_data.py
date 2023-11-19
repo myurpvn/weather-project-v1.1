@@ -6,6 +6,7 @@ import pandas as pd
 from google.cloud import bigquery
 from google.oauth2 import service_account
 import os
+import json
 
 
 def get_response(long, lat, mode, output):
@@ -47,8 +48,9 @@ def save_df(df: pd.DataFrame, curr_date) -> pd.DataFrame:
 
 
 def load_to_bq():
-    credentials = service_account.Credentials.from_service_account_file(
-        os.getenv('BQ_JSON'),
+    json_acct_info = json.loads(os.getenv('BQ_JSON'))
+    credentials = service_account.Credentials.from_service_account_info(
+        json_acct_info,
         scopes=["https://www.googleapis.com/auth/cloud-platform"],
     )
     client = bigquery.Client(
