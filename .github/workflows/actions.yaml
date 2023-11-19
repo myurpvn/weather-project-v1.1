@@ -27,7 +27,7 @@ jobs:
       - name: execute py script # run main.py
         env:
           BQ_JSON: ${{ secrets.BQ_SVA_JSON }}
-        run: python retrieve_data.py
+        run: poetry run python retrieve_data.py
           
       - name: commit files
         run: |
