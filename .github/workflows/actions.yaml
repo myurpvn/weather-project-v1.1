@@ -1,9 +1,9 @@
 name: run retrieve_data.py
 
 on:
-  workflow_dispatch:
-  # schedule:
-  #   - cron: '0 10 * * *' # At 10:00 AM daily
+  # workflow_dispatch:
+  schedule:
+    - cron: '0 10 * * *' # At 10:00 AM daily
 
 jobs:
   build:
