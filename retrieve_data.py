@@ -48,7 +48,7 @@ def save_df(df: pd.DataFrame, curr_date) -> pd.DataFrame:
 
 def load_to_bq():
     credentials = service_account.Credentials.from_service_account_file(
-        "cred.json",
+        os.getenv('BQ_JSON'),
         scopes=["https://www.googleapis.com/auth/cloud-platform"],
     )
     client = bigquery.Client(
