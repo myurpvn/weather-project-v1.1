@@ -3,41 +3,40 @@ name: run retrieve_data.py
 on:
   # workflow_dispatch:
   schedule:
-    - cron: '30 5 * * *' # At 11 AM daily (UTC - 05:30)
+    - cron: "30 5 * * *" # At 11 AM daily (UTC - 05:30)
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-
       - name: checkout repo content
         uses: actions/checkout@v2 # checkout the repository content to github runner
 
       - name: setup python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12' # install the python version needed
-          
+          python-version: "3.12" # install the python version needed
+
       - name: install poetry and then dependencies
         run: |
           python -m pip install --upgrade pip
           pip install poetry
           poetry install --no-root
-          
+
       - name: execute python script
         env:
           BQ_JSON: ${{ secrets.BQ_SVA_JSON }}
         run: poetry run python retrieve_data.py
-          
+
       - name: commit files
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add -A
           git diff-index --quiet HEAD || (git commit -a -m "added file to output" --allow-empty)
-          
+
       - name: push changes
         uses: ad-m/github-push-action@v0.6.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main 
+          branch: main
