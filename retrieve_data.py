@@ -25,7 +25,7 @@ def fix_timepoint(row):
     return row["timepoint"] % 24
 
 
-def build_df(response, curr_date) -> pd.DataFrame:
+def build_df(response, file_date) -> pd.DataFrame:
     df = pd.DataFrame()
     cols = []
     data = response["dataseries"]
@@ -39,12 +39,12 @@ def build_df(response, curr_date) -> pd.DataFrame:
     df["date"] = pd.to_datetime(df["date"], format="%Y%m%d")
     df["date"] = df.apply(fix_date, axis=1)
     df["timepoint"] = df.apply(fix_timepoint, axis=1)
-    df = df[df["date"] == curr_date]
+    df = df[df["date"] == file_date]
     return df
 
 
-def save_df(df: pd.DataFrame, curr_date) -> pd.DataFrame:
-    df.to_parquet(f"./output/{curr_date}.pq", engine="pyarrow")
+def save_df(df: pd.DataFrame, file_date) -> pd.DataFrame:
+    df.to_parquet(f"./output/{file_date}.pq", engine="pyarrow")
     return df
 
 
@@ -89,9 +89,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--local", help="indicate local execution", action="store_true")
     args = parser.parse_args()
-    curr_date = datetime.now().date()
-    df = build_df(get_response("81.69", "7.71", "astro", "json"), curr_date)
-    save_df(df, curr_date)
+    file_date = datetime.now().date() + timedelta(days=1)
+    df = build_df(get_response("81.69", "7.71", "astro", "json"), file_date)
+    save_df(df, file_date)
     if args.local:
         print("load job skipped for local run")
     else:
