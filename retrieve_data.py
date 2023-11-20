@@ -7,6 +7,7 @@ from google.cloud import bigquery
 from google.oauth2 import service_account
 import os
 import json
+import argparse
 
 
 def get_response(long, lat, mode, output):
@@ -76,7 +77,7 @@ def load_to_bq():
     )
 
 
-def initial_checks():
+def initial_check():
     output_path = "./output/"
     is_exist = os.path.exists(output_path)
     if not is_exist:
@@ -84,8 +85,14 @@ def initial_checks():
 
 
 if __name__ == "__main__":
-    initial_checks()
+    initial_check()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--local", help="indicate local execution", action="store_true")
+    args = parser.parse_args()
     curr_date = datetime.now().date()
     df = build_df(get_response("81.69", "7.71", "astro", "json"), curr_date)
     save_df(df, curr_date)
-    load_to_bq()
+    if args.local:
+        print("load job skipped for local run")
+    else:
+        load_to_bq()

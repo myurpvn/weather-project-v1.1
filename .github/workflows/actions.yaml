@@ -3,7 +3,7 @@ name: run retrieve_data.py
 on:
   # workflow_dispatch:
   schedule:
-    - cron: '0 10 * * *' # At 10:00 AM daily
+    - cron: '30 5 * * *' # At 11 AM daily (UTC - 05:30)
 
 jobs:
   build:
@@ -24,7 +24,7 @@ jobs:
           pip install poetry
           poetry install --no-root
           
-      - name: execute py script # run main.py
+      - name: execute python script
         env:
           BQ_JSON: ${{ secrets.BQ_SVA_JSON }}
         run: poetry run python retrieve_data.py
