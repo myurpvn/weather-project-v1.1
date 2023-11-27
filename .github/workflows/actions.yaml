@@ -1,7 +1,7 @@
 name: run retrieve_data.py
 
 on:
-  # workflow_dispatch:
+  workflow_dispatch:
   schedule:
     - cron: "30 5 * * *" # At 11 AM daily (UTC - 05:30)
 
