@@ -4,6 +4,10 @@ import pandas as pd
 from google.cloud import bigquery
 from google.oauth2 import service_account
 
+DATASET = "raw_data"
+TABLE = "mapping_table"
+
+
 def init_bq_conn() -> (service_account.Credentials, bigquery.Client):
     json_acct_info = json.loads(os.getenv("BQ_JSON"))
     credentials = service_account.Credentials.from_service_account_info(
@@ -18,9 +22,10 @@ def init_bq_conn() -> (service_account.Credentials, bigquery.Client):
 
     return (credentials, client)
 
+
 def load_to_bq():
     (credentials, client) = init_bq_conn()
-    table = f"{credentials.project_id}.raw_data.mapping_table"
+    table = f"{credentials.project_id}.{DATASET}.{TABLE}"
     job_config = bigquery.LoadJobConfig(
         write_disposition="WRITE_TRUNCATE",
     )
@@ -34,3 +39,7 @@ def load_to_bq():
             table.num_rows, len(table.schema), table
         )
     )
+
+
+if __name__ == "__main__":
+    load_to_bq()
