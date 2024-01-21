@@ -3,7 +3,7 @@ name: run load_mapping_table.py
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 5 1 */2 *" # At 10:30 AM on day-of-month 1 in every 2nd month (UTC - 05:00)
+    - cron: "0 13 1 */2 *" # At 18:30 AM on day-of-month 1 in every 2nd month (UTC - 13:00)
 
 jobs:
   build:
