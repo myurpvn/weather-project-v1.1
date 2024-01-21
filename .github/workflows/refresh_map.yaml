@@ -26,4 +26,4 @@ jobs:
       - name: execute python script
         env:
           BQ_JSON: ${{ secrets.BQ_SVA_JSON }}
-        run: poetry run python load_mapping_table.py
+        run: poetry run python load_mapping_tables.py

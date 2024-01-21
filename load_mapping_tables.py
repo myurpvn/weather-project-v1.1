@@ -29,6 +29,7 @@ def load_to_bq():
     )
     tables = ["cloud_cover", "lifted_index", "rh2m", "wind10m"]
     for table in tables:
+        print(f"loading table: {table}")
         data = pd.read_csv(f"./mapping_tables/{table}.csv")
         bq_table = f"{credentials.project_id}.{DATASET}.mapping_table_{table}"
         job = client.load_table_from_dataframe(data, bq_table, job_config=job_config)
