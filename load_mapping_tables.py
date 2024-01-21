@@ -5,7 +5,6 @@ from google.cloud import bigquery
 from google.oauth2 import service_account
 
 DATASET = "raw_data"
-TABLE = "mapping_table"
 
 
 def init_bq_conn() -> (service_account.Credentials, bigquery.Client):
@@ -25,20 +24,15 @@ def init_bq_conn() -> (service_account.Credentials, bigquery.Client):
 
 def load_to_bq():
     (credentials, client) = init_bq_conn()
-    table = f"{credentials.project_id}.{DATASET}.{TABLE}"
     job_config = bigquery.LoadJobConfig(
         write_disposition="WRITE_TRUNCATE",
     )
-    data = pd.read_csv("./mapping_table.csv")
-    job = client.load_table_from_dataframe(data, table, job_config=job_config)
-    job.result()
-
-    table = client.get_table(table)
-    print(
-        "Loaded {} rows and {} columns to {}".format(
-            table.num_rows, len(table.schema), table
-        )
-    )
+    tables = ["cloud_cover", "lifted_index", "rh2m", "wind10m"]
+    for table in tables:
+        data = pd.read_csv(f"./mapping_tables/{table}.csv")
+        bq_table = f"{credentials.project_id}.{DATASET}.mapping_table_{table}"
+        job = client.load_table_from_dataframe(data, bq_table, job_config=job_config)
+        job.result()
 
 
 if __name__ == "__main__":
