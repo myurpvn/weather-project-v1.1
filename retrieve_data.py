@@ -64,18 +64,13 @@ def save_df(df: pd.DataFrame, file_date) -> pd.DataFrame:
     return df
 
 
-def init_bq_conn(local_run: bool) -> tuple[Credentials, bigquery.Client]:
-    if local_run:
-        credentials = Credentials.from_service_account_file(
-            "cred.json",
-            scopes=["https://www.googleapis.com/auth/cloud-platform"],
-        )
-    else:
-        json_acct_info = json.loads(os.getenv("BQ_JSON"))
-        credentials = Credentials.from_service_account_info(
-            json_acct_info,
-            scopes=["https://www.googleapis.com/auth/cloud-platform"],
-        )
+def init_bq_conn() -> tuple[Credentials, bigquery.Client]:
+
+    json_acct_info = json.loads(os.getenv("BQ_JSON"))
+    credentials = Credentials.from_service_account_info(
+        json_acct_info,
+        scopes=["https://www.googleapis.com/auth/cloud-platform"],
+    )
 
     client = bigquery.Client(
         credentials=credentials,
@@ -105,22 +100,22 @@ def load_to_bq(credentials: Credentials, client: bigquery.Client):
     logger.info("BQ Load: Success", num_rows=table.num_rows, num_cols=len(table.schema))
 
 
-def initial_check(local_run: bool):
+def initial_check():
     if not os.path.exists(OUTPUT_PATH):
         os.mkdir(OUTPUT_PATH)
-    return init_bq_conn(local_run)
+    return init_bq_conn()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    args = parser.parse_args()
     parser.add_argument(
         "--local",
         help="indicate local execution",
         action="store_true",
     )
+    args = parser.parse_args()
 
-    credentials, client = initial_check(args.local)
+    credentials, client = initial_check()
     logger.info("Initial Checks: Passed", bq_project=credentials.project_id)
 
     response = None
