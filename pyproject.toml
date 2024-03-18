@@ -13,6 +13,7 @@ requests = "^2.31.0"
 google-cloud-bigquery = "^3.13.0"
 pyarrow = "^14.0.1"
 numpy = "^1.26.2"
+structlog = "^24.1.0"
 
 
 [build-system]

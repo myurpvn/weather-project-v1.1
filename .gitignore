@@ -2,3 +2,5 @@
 .DS_Store
 .vscode
 cred.json
+.env
+__pycache__

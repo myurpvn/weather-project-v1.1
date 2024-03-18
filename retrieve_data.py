@@ -1,24 +1,27 @@
 from requests import get
 from datetime import timedelta
 from datetime import datetime
+from google.cloud import bigquery
+from google.oauth2.service_account import Credentials
+from structlog import get_logger
 import numpy as np
 import pandas as pd
-from google.cloud import bigquery
-from google.oauth2 import service_account
 import os
 import json
 import argparse
 
+
 RETRY_COUNT = 3
 FILE_DATE = datetime.now().date() + timedelta(days=1)
 OUTPUT_PATH = "./output/"
+
+logger = get_logger()
 
 
 def get_response(long, lat, mode, output):
     try:
         url = f"http://www.7timer.info/bin/api.pl?lon={long}&lat={lat}&product={mode}&output={output}"
         response = get(url).json()
-        # print(response.text)
     except Exception as e:
         print("Error encountered: ", e)
         return None
@@ -61,12 +64,18 @@ def save_df(df: pd.DataFrame, file_date) -> pd.DataFrame:
     return df
 
 
-def init_bq_conn() -> (service_account.Credentials, bigquery.Client):
-    json_acct_info = json.loads(os.getenv("BQ_JSON"))
-    credentials = service_account.Credentials.from_service_account_info(
-        json_acct_info,
-        scopes=["https://www.googleapis.com/auth/cloud-platform"],
-    )
+def init_bq_conn(local_run: bool) -> tuple[Credentials, bigquery.Client]:
+    if local_run:
+        credentials = Credentials.from_service_account_file(
+            "cred.json",
+            scopes=["https://www.googleapis.com/auth/cloud-platform"],
+        )
+    else:
+        json_acct_info = json.loads(os.getenv("BQ_JSON"))
+        credentials = Credentials.from_service_account_info(
+            json_acct_info,
+            scopes=["https://www.googleapis.com/auth/cloud-platform"],
+        )
 
     client = bigquery.Client(
         credentials=credentials,
@@ -76,48 +85,58 @@ def init_bq_conn() -> (service_account.Credentials, bigquery.Client):
     return (credentials, client)
 
 
-def load_to_bq():
-    (credentials, client) = init_bq_conn()
+def load_to_bq(credentials: Credentials, client: bigquery.Client):
+    logger.info("Starting BQ Load")
+    load_time = datetime.now()
+
     table = f"{credentials.project_id}.raw_data.astro_weather"
     job_config = bigquery.LoadJobConfig(
         write_disposition="WRITE_TRUNCATE",
     )
-    load_time = datetime.now()
+
     data = pd.read_parquet("./output/", engine="pyarrow")
     data["bq_load_time"] = load_time
+
+    logger.info("Destination: ", sink=table)
     job = client.load_table_from_dataframe(data, table, job_config=job_config)
     job.result()
 
     table = client.get_table(table)
-    print(
-        "Loaded {} rows and {} columns to {}".format(
-            table.num_rows, len(table.schema), table
-        )
-    )
+    logger.info("BQ Load: Success", num_rows=table.num_rows, num_cols=len(table.schema))
 
 
-def initial_check():
+def initial_check(local_run: bool):
     if not os.path.exists(OUTPUT_PATH):
         os.mkdir(OUTPUT_PATH)
+    return init_bq_conn(local_run)
 
 
 if __name__ == "__main__":
-    initial_check()
     parser = argparse.ArgumentParser()
-    parser.add_argument("--local", help="indicate local execution", action="store_true")
     args = parser.parse_args()
+    parser.add_argument(
+        "--local",
+        help="indicate local execution",
+        action="store_true",
+    )
+
+    credentials, client = initial_check(args.local)
+    logger.info("Initial Checks: Passed", bq_project=credentials.project_id)
 
     response = None
     for _ in range(RETRY_COUNT):
+        logger.info("Getting API response")
         response = get_response("81.69", "7.71", "astro", "json")
         if response is not None:
             break
 
     if response is not None:
+        logger.info("Building Pandas DataFrame")
         df = build_df(response, FILE_DATE)
+        logger.info("Saving DataFrame as Parquet file", len_df=len(df))
         save_df(df, FILE_DATE)
 
         if args.local:
-            print("load job skipped for local run")
+            logger.info("load job skipped for local run")
         else:
-            load_to_bq()
+            load_to_bq(credentials, client)
